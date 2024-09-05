@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #444;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        label {
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #result {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #000;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+<div>
+    <h1>Stock Price Prediction</h1>
+    <form id="predictionForm">
+        <label for="stockName">Stock Name:</label>
+        <input type="text" id="stockName" name="stockName" required>
+        <br>
+        <label for="days">Duration (days):</label>
+        <input type="number" id="days" name="days" min="1" max="7" required>
+        <br>
+        <button type="submit">Get Prediction</button>
+    </form>
+    <h2>Prediction:</h2>
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById('predictionForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const stockName = document.getElementById('stockName').value;
+        const days = document.getElementById('days').value;
+
+        fetch('http://localhost:5000/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({stock_name: stockName, days: days})
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.predicted_price && data.predicted_price.length > 0) {
+                    const result = data.predicted_price.map((price, index) => `Day ${index + 1}: $${price.toFixed(2)}`).join('<br>');
+                    document.getElementById('result').innerHTML = `<strong>Predicted Prices:</strong><br>${result}`;
+                } else if (data.error) {
+                    document.getElementById('result').innerText = `Error: ${data.error}`;
+                } else {
+                    document.getElementById('result').innerText = 'No predictions returned.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerText = 'An error occurred while fetching the prediction.';
+            });
+    });
+</script>
+</body>
+</html>
