@@ -62,8 +62,9 @@ for params in hyperparameters:
     
     if mse < best_mse:
         best_mse = mse
-        best_params = params
-        sequential_model.save("NVDA_model.h5")
+        best_model=sequential_model
+        if best_mse<3:
+            break
 
 
     print(f"Mean Squared Error: {mse}")
@@ -81,9 +82,8 @@ for params in hyperparameters:
              horizontalalignment="right", bbox=dict(boxstyle="round",
                                                     facecolor="white", alpha=0.5))
     plt.show()
-    if mse < 100.0:
-        sequential_model.save("NVDA_model.h5")
-        break
+
+best_model.save("1hr_NVDA_model.h5")
 
 last_sequence = train_data_scaled[-60:]
 

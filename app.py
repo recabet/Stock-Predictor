@@ -19,7 +19,7 @@ def predict ():
     try:
         data = request.json
         stock_name = data["stock_name"]
-        model = tf.keras.models.load_model(f"{stock_name}_model.h5")
+        model = tf.keras.models.load_model(f"../Models/{stock_name}_model.h5")
         days = int(data["days"])
         
         df = yf.download(stock_name, period="max", interval="1d")
