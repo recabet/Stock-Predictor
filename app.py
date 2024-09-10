@@ -15,14 +15,16 @@ scaler = MinMaxScaler()
 
 @app.route('/predict', methods=['POST'])
 def predict ():
-    
     try:
         data = request.json
         stock_name = data["stock_name"]
-        model = tf.keras.models.load_model(f"../Models/{stock_name}_model.h5")
         days = int(data["days"])
+        interval = data.get("interval", "1d")  # Default to daily if not provided
         
-        df = yf.download(stock_name, period="max", interval="1d")
+        model = tf.keras.models.load_model(f"../Stock-Predictor/Models/{interval}_{stock_name}_model.h5")
+        
+        # Download stock data
+        df = yf.download(stock_name, period="max", interval=interval)
         df.index = pd.to_datetime(df.index)
         
         df = df[["Adj Close"]].dropna()
@@ -36,10 +38,7 @@ def predict ():
         
         for _ in range(days):
             pred = model.predict(last_seq)
-            # Update the sequence: remove the oldest and add the newest prediction
-            # Reshape the prediction to match the shape (samples, timesteps, features)
             last_seq = np.append(last_seq[:, 1:, :], np.expand_dims(pred, axis=1), axis=1)
-            
             predictions.append(pred[0, 0])
         
         predictions_rescaled = scaler.inverse_transform(np.array(predictions).reshape(-1, 1)).flatten()

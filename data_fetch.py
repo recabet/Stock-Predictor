@@ -7,8 +7,18 @@ from sklearn.model_selection import train_test_split
 
 scaler = MinMaxScaler()
 
-def prepare_data(stock_name:str,scaler_):
-    data = yf.download(f"{stock_name}", period="2y", interval="1h")
+def prepare_data(stock_name:str,scaler_,interval:str="1h"):
+    match interval:
+        case "1h":
+            data = yf.download(f"{stock_name}", period="2y", interval=interval)
+        case "1m":
+            data = yf.download(f"{stock_name}", period="max", interval=interval)
+        case "1d":
+            data = yf.download(f"{stock_name}", period="max", interval=interval)
+        case _:
+            raise ValueError(f"Invalid interval {interval}")
+        
+
     data.index = pd.to_datetime(data.index)
     print(data.index.max())
     data["Daily_Ret"] = data["Adj Close"].pct_change()

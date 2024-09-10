@@ -11,11 +11,12 @@ np.random.seed(6)
 random.seed(6)
 
 best_mse=float("inf")
+interval="1d"
 
 for i in range(60):
     
     scaler=MinMaxScaler()
-    train_data_scaled, test_data_scaled = prepare_data("AAPL",scaler)
+    train_data_scaled, test_data_scaled = prepare_data("AAPL",scaler,interval)
     
     X_train, y_train = create_sequences(train_data_scaled ,seq_length=23)
     X_test, y_test = create_sequences(test_data_scaled ,seq_length=23)
@@ -57,7 +58,7 @@ for i in range(60):
         best_mse = mse
         best_model = sequential_model
     
-best_model.save("1hr_AAPL_model.h5")
+best_model.save(f"{interval}_AAPL_model.h5")
 
 last_sequence = train_data_scaled[-60:]
 
