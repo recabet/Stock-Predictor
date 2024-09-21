@@ -3,7 +3,10 @@ import yfinance as yf
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+import random
 
+np.random.seed(6)
+random.seed(6)
 
 scaler = MinMaxScaler()
 

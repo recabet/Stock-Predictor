@@ -9,6 +9,7 @@ import random
 
 np.random.seed(6)
 random.seed(6)
+tf.random.set_seed(6)
 
 best_mse=float("inf")
 interval="1d"
