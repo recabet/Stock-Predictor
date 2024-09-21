@@ -3,12 +3,25 @@ import yfinance as yf
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+import random
 
+np.random.seed(6)
+random.seed(6)
 
 scaler = MinMaxScaler()
 
-def prepare_data(stock_name:str,scaler_):
-    data = yf.download(f"{stock_name}", period="max", interval="1d")
+def prepare_data(stock_name:str,scaler_,interval:str="1h"):
+    match interval:
+        case "1h":
+            data = yf.download(f"{stock_name}", period="2y", interval=interval)
+        case "1m":
+            data = yf.download(f"{stock_name}", period="max", interval=interval)
+        case "1d":
+            data = yf.download(f"{stock_name}", period="max", interval=interval)
+        case _:
+            raise ValueError(f"Invalid interval {interval}")
+        
+
     data.index = pd.to_datetime(data.index)
     print(data.index.max())
     data["Daily_Ret"] = data["Adj Close"].pct_change()
@@ -25,6 +38,8 @@ def create_sequences (datas, seq_length=23):
         x.append(datas[i:i + seq_length])
         y.append(datas[i + seq_length])
     return np.array(x), np.array(y)
+
+
 
 
 

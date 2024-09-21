@@ -38,7 +38,7 @@
             color: #555;
         }
 
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -89,8 +89,15 @@
         <label for="stockName">Stock Name:</label>
         <input type="text" id="stockName" name="stockName" required>
         <br>
-        <label for="days">Duration (days):</label>
+        <label for="days">Duration:</label>
         <input type="number" id="days" name="days" min="1" max="7" required>
+        <br>
+        <label for="interval">Prediction Interval:</label>
+        <select id="interval" name="interval" required>
+            <option value="1d">Daily</option>
+            <option value="1h">Hourly</option>
+            <option value="1m">Minute</option>
+        </select>
         <br>
         <button type="submit">Get Prediction</button>
     </form>
@@ -104,18 +111,19 @@
 
         const stockName = document.getElementById('stockName').value;
         const days = document.getElementById('days').value;
+        const interval = document.getElementById('interval').value;
 
         fetch('http://localhost:5000/predict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({stock_name: stockName, days: days})
+            body: JSON.stringify({stock_name: stockName, days: days, interval: interval})
         })
             .then(response => response.json())
             .then(data => {
                 if (data.predicted_price && data.predicted_price.length > 0) {
-                    const result = data.predicted_price.map((price, index) => `Day ${index + 1}: $${price.toFixed(2)}`).join('<br>');
+                    const result = data.predicted_price.map((price, index) => `${interval[1]}${index + 1}: $${price.toFixed(2)}`).join('<br>');
                     document.getElementById('result').innerHTML = `<strong>Predicted Prices:</strong><br>${result}`;
                 } else if (data.error) {
                     document.getElementById('result').innerText = `Error: ${data.error}`;

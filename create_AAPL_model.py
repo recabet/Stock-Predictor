@@ -9,11 +9,15 @@ import random
 
 np.random.seed(6)
 random.seed(6)
+tf.random.set_seed(6)
+
+best_mse=float("inf")
+interval="1d"
 
 for i in range(60):
     
     scaler=MinMaxScaler()
-    train_data_scaled, test_data_scaled = prepare_data("AAPL",scaler)
+    train_data_scaled, test_data_scaled = prepare_data("AAPL",scaler,interval)
     
     X_train, y_train = create_sequences(train_data_scaled ,seq_length=23)
     X_test, y_test = create_sequences(test_data_scaled ,seq_length=23)
@@ -51,9 +55,11 @@ for i in range(60):
              horizontalalignment="right", bbox=dict(boxstyle="round",
                                                     facecolor="white", alpha=0.5))
     plt.show()
-    if mse<100.0:
-        sequential_model.save("AAPL_model.h5")
-        break
+    if mse < best_mse:
+        best_mse = mse
+        best_model = sequential_model
+    
+best_model.save(f"{interval}_AAPL_model.h5")
 
 last_sequence = train_data_scaled[-60:]
 

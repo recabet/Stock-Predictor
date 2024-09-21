@@ -26,13 +26,14 @@ best_params = None
 
 np.random.seed(6)
 random.seed(6)
+interval="1m"
 
 for params in hyperparameters:
     epochs, batch_size, seq_length, lstm_units = params
     print(f"Testing with: epochs={epochs}, batch_size={batch_size}, seq_length={seq_length}, lstm_units={lstm_units}")
     
     scaler = MinMaxScaler()
-    train_data_scaled, test_data_scaled = prepare_data("NVDA", scaler)
+    train_data_scaled, test_data_scaled = prepare_data("NVDA", scaler,interval)
     
     X_train, y_train = create_sequences(train_data_scaled, seq_length=seq_length)
     X_test, y_test = create_sequences(test_data_scaled, seq_length=seq_length)
@@ -57,15 +58,6 @@ for params in hyperparameters:
     
     mse = mean_squared_error(y_test_rescaled, y_pred_rescaled)
     mae = mean_absolute_error(y_test_rescaled, y_pred_rescaled)
-    
-    print(f"Mean Squared Error: {mse}, Mean Absolute Error: {mae}")
-    
-    if mse < best_mse:
-        best_mse = mse
-        best_params = params
-        sequential_model.save("NVDA_model.h5")
-
-
     print(f"Mean Squared Error: {mse}")
     print(f"Mean Absolute Error: {mae}")
     
@@ -81,9 +73,15 @@ for params in hyperparameters:
              horizontalalignment="right", bbox=dict(boxstyle="round",
                                                     facecolor="white", alpha=0.5))
     plt.show()
-    if mse < 100.0:
-        sequential_model.save("NVDA_model.h5")
-        break
+    
+    if mse < best_mse:
+        best_mse = mse
+        best_model=sequential_model
+        if best_mse<0.015:
+            break
+
+
+best_model.save(f"{interval}_NVDA_model.h5")
 
 last_sequence = train_data_scaled[-60:]
 
