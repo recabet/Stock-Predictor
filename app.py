@@ -21,10 +21,12 @@ def predict ():
         days = int(data["days"])
         interval = data.get("interval", "1d")  # Default to daily if not provided
         
-        model = tf.keras.models.load_model(f"../Stock-Predictor/Models/{interval}_{stock_name}_model.h5")
-        
-        # Download stock data
-        df = yf.download(stock_name, period="max", interval=interval)
+        model = tf.keras.models.load_model(f"../Stock-Predictor/Models/new_{interval}_{stock_name}_model.h5")
+        if interval == "1h":
+            df = yf.download(stock_name, period="2y", interval=interval)
+        else:
+            df = yf.download(stock_name, period="max", interval=interval)
+            
         df.index = pd.to_datetime(df.index)
         
         df = df[["Adj Close"]].dropna()

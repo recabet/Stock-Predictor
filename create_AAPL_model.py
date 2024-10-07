@@ -1,79 +1,38 @@
-from data_fetch import create_sequences
-from data_fetch import prepare_data
-import matplotlib.pyplot as plt
-import tensorflow as tf
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+import keras
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import random
+import tensorflow as tf
+from Tuner import Tuner
+from data_fetch import prepare_data
+from typing import Callable
 
 np.random.seed(6)
 random.seed(6)
 tf.random.set_seed(6)
 
-best_mse=float("inf")
-interval="1d"
+interval = "1h"
+def model_builder(lstm_units: int, seq_length: int=20, feature_dim: int=1, num_layers: int=1)->Callable:
+    def _model_builder (_lstm_units: int, _seq_length: int, _feature_dim: int, _num_layers: int) -> tf.keras.Model:
+        model = keras.Sequential()
+        model.add(
+            keras.layers.LSTM(lstm_units, input_shape=(seq_length, feature_dim), return_sequences=(num_layers > 1)))
+        for _ in range(1, num_layers):
+            model.add(keras.layers.LSTM(lstm_units, return_sequences=(_ < num_layers - 1)))
+        model.add(keras.layers.Dense(1))
+        return model
+    return _model_builder(lstm_units, seq_length, feature_dim, num_layers)
 
-for i in range(60):
-    
-    scaler=MinMaxScaler()
-    train_data_scaled, test_data_scaled = prepare_data("AAPL",scaler,interval)
-    
-    X_train, y_train = create_sequences(train_data_scaled ,seq_length=23)
-    X_test, y_test = create_sequences(test_data_scaled ,seq_length=23)
-    
-    sequential_model = tf.keras.Sequential([
-        tf.keras.layers.LSTM(88, input_shape=(X_train.shape[1], X_train.shape[2])),
-        tf.keras.layers.Dense(1)
-    ])
-    
-    sequential_model.compile(optimizer="adam", loss="mean_squared_error")
-    sequential_model.fit(X_train, y_train, batch_size=24, epochs=35, validation_split=0.1)
-    
-    y_pred = sequential_model.predict(X_test)
-    
-    y_pred_reshaped = y_pred.reshape(-1, 1)
-    y_test_reshaped = y_test.reshape(-1, 1)
-    y_pred_rescaled = scaler.inverse_transform(y_pred_reshaped)
-    y_test_rescaled = scaler.inverse_transform(y_test_reshaped)
-    mse = mean_squared_error(y_test_rescaled, y_pred_rescaled)
-    mae = mean_absolute_error(y_test_rescaled, y_pred_rescaled)
-    
-    print(f"Mean Squared Error: {mse}")
-    print(f"Mean Absolute Error: {mae}")
-    
-    
-    plt.figure(figsize=(14, 7))
-    plt.plot(y_test_rescaled, color="blue", label="Actual Price")
-    plt.plot(y_pred_rescaled, color="red", label="Predicted Price")
-    plt.title("Actual vs Predicted Stock Prices")
-    plt.xlabel("Time")
-    plt.ylabel("Stock Price")
-    plt.legend()
-    plt.text(0.95, 0.75, f"MSE: {mse:.2f}\nMAE: {mae:.2f}",
-             transform=plt.gca().transAxes, fontsize=12, verticalalignment="top",
-             horizontalalignment="right", bbox=dict(boxstyle="round",
-                                                    facecolor="white", alpha=0.5))
-    plt.show()
-    if mse < best_mse:
-        best_mse = mse
-        best_model = sequential_model
-    
+tuner = Tuner(
+    epochs_list=[20, 30, 35],
+    batch_size_list=[24, 32],
+    lstm_units_list=[64, 88],
+    seq_length_list=[23],
+    num_layers_list=[1, 2],
+    model_builder=model_builder
+)
+
+best_model = tuner.tune(stock_symbol="AAPL", interval=interval, metric="mse",threshold=3, plot=True, verbose=True)
 best_model.save(f"{interval}_AAPL_model.h5")
-
-last_sequence = train_data_scaled[-60:]
-
-future_predictions = []
-
-for _ in range(10):
-    prediction_input = last_sequence.reshape((1, last_sequence.shape[0], last_sequence.shape[1]))
-    predicted_price = sequential_model.predict(prediction_input)
-    
-    future_predictions.append(predicted_price[0, 0])
-    
-    last_sequence = np.append(last_sequence[1:], predicted_price, axis=0)
-
-future_predictions_rescaled = scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1))
-
-print("Future Predictions (next 10 days):")
-print(future_predictions_rescaled)
+scaler = MinMaxScaler()
+train_data_scaled, _ = prepare_data("AAPL", scaler, interval)
