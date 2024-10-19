@@ -1,7 +1,7 @@
 from itertools import product
 from typing import List, Tuple, Callable
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from data_fetch import create_sequences, prepare_data
+from Backend.data_fetch import create_sequences, prepare_data
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib import pyplot as plt
 import keras
@@ -42,7 +42,6 @@ class Tuner:
     
     @staticmethod
     def __build_model (lstm_units: int, seq_length: int, feature_dim: int, num_layers: int) -> keras.Model:
-        
         model = keras.Sequential()
         model.add(
             keras.layers.LSTM(lstm_units, input_shape=(seq_length, feature_dim), return_sequences=(num_layers > 1))
