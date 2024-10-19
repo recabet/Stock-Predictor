@@ -13,14 +13,12 @@ CORS(app)
 
 scaler = MinMaxScaler()
 
-
 @app.route("/", methods=["GET"])
-def index ():
+def index():
     return render_template("index.html")
 
-
 @app.route("/predict", methods=["POST"])
-def predict ():
+def predict():
     try:
         data = request.json
         stock_name = data["stock_name"]
@@ -34,12 +32,10 @@ def predict ():
             df = yf.download(stock_name, period="max", interval=interval)
         
         df.index = pd.to_datetime(df.index)
-        
         df = df[["Adj Close"]].dropna()
         scaled_data = scaler.fit_transform(df)
         
         x_seq, _ = create_sequences(scaled_data)
-        
         last_seq = x_seq[-1].reshape(1, x_seq.shape[1], x_seq.shape[2])
         
         predictions = []
@@ -57,14 +53,12 @@ def predict ():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-
 @app.after_request
-def after_request (response):
+def after_request(response):
     response.headers.add("Access-Control-Allow-Origin", '*')
     response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
     response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
     return response
-
 
 if __name__ == "__main__":
     app.run(debug=True)
