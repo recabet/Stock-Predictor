@@ -42,7 +42,6 @@ class Tuner:
     
     @staticmethod
     def __build_model (lstm_units: int, seq_length: int, feature_dim: int, num_layers: int) -> keras.Model:
-        
         model = keras.Sequential()
         model.add(
             keras.layers.LSTM(lstm_units, input_shape=(seq_length, feature_dim), return_sequences=(num_layers > 1))

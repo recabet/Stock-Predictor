@@ -3,7 +3,7 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import random
 import tensorflow as tf
-from Tuner import Tuner
+from Classes.Tuner import Tuner
 from data_fetch import prepare_data
 from typing import Callable
 

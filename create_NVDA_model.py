@@ -1,8 +1,5 @@
 from data_fetch import create_sequences
 from data_fetch import prepare_data
-import matplotlib.pyplot as plt
-import tensorflow as tf
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import random
