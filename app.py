@@ -25,7 +25,7 @@ def predict():
         days = int(data["days"])
         interval = data.get("interval", "1d")  # Default to daily if not provided
         
-        model = keras.models.load_model(f"test_models/{interval}_{stock_name}_model.h5")
+        model = keras.models.load_model(f"models/{stock_name}/{interval}_{stock_name}_model.h5")
         if interval == "1h":
             df = yf.download(stock_name, period="2y", interval=interval)
         else:
