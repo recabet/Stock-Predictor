@@ -41,7 +41,11 @@ class Tuner:
         self.model_builder: Callable = model_builder if model_builder else self.__build_model
     
     @staticmethod
-    def __build_model (lstm_units: int, seq_length: int, feature_dim: int, num_layers: int) -> keras.Model:
+    def __build_model (lstm_units: int,
+                       seq_length: int,
+                       feature_dim: int,
+                       num_layers: int) -> keras.Model:
+        
         model = keras.Sequential()
         model.add(
             keras.layers.LSTM(lstm_units, input_shape=(seq_length, feature_dim), return_sequences=(num_layers > 1))
@@ -52,8 +56,14 @@ class Tuner:
         
         return model
     
-    def tune (self, stock_symbol: str, interval: str, threshold: float = 5, metric: str = "mse",
-              plot: bool = False, verbose: bool = False):
+    def tune (self,
+              stock_symbol: str,
+              interval: str,
+              threshold: float = 5,
+              metric: str = "mse",
+              plot: bool = False,
+              verbose: bool = False):
+        
         best_model = None
         best_mse = float('inf')
         
