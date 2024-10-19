@@ -4,7 +4,7 @@ import numpy as np
 import random
 import tensorflow as tf
 from Classes.Tuner import Tuner
-from Backend.data_fetch import prepare_data
+from data_fetch import prepare_data
 from typing import Callable
 
 np.random.seed(6)

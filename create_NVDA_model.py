@@ -1,5 +1,5 @@
-from Backend.data_fetch import create_sequences
-from Backend.data_fetch import prepare_data
+from data_fetch import create_sequences
+from data_fetch import prepare_data
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import random
