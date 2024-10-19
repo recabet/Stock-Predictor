@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import pandas as pd
 import yfinance as yf
 import numpy as np
@@ -11,6 +11,12 @@ app = Flask(__name__)
 CORS(app)
 
 scaler = MinMaxScaler()
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html")
+
 
 
 @app.route("/predict", methods=["POST"])
