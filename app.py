@@ -3,11 +3,11 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-import tensorflow as tf
+import keras
 from flask_cors import CORS
 from data_fetch import create_sequences
 
-# Create the Flask app and set the template folder
+
 app = Flask(__name__, template_folder="/home/recabet/Coding/Stock-Predictor/template")
 CORS(app)
 
@@ -25,7 +25,7 @@ def predict():
         days = int(data["days"])
         interval = data.get("interval", "1d")  # Default to daily if not provided
         
-        model = tf.keras.models.load_model(f"../Stock-Predictor/Models/{interval}_{stock_name}_model.h5")
+        model = keras.models.load_model(f"models/{stock_name}/{interval}_{stock_name}_model.h5")
         if interval == "1h":
             df = yf.download(stock_name, period="2y", interval=interval)
         else:
