@@ -9,3 +9,4 @@ keras==3.5.0
 matplotlib==3.8.0
 pytz==2024.1
 schedule==1.2.2
+keras-tuner~=1.4.7

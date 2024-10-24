@@ -1,126 +1,142 @@
-from itertools import product
-from typing import List, Tuple, Callable
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-from src.data_fetch import create_sequences, prepare_data
-from sklearn.preprocessing import MinMaxScaler
-from matplotlib import pyplot as plt
+from keras_tuner import RandomSearch, HyperParameters
+from src.get_data import create_sequences, prepare_data, scaler
 import keras
-import numpy as np
+from matplotlib import pyplot as plt
+from typing import Optional
+
+
+class TuningException(Exception):
+    """Custom exception for Tuning errors."""
+    pass
 
 
 class Tuner:
     def __init__ (self,
-                  epochs_list: List[int] = None,
-                  batch_size_list: List[int] = None,
-                  lstm_units_list: List[int] = None,
-                  seq_length_list: List[int] = None,
-                  num_layers_list: List[int] = None,
-                  model_builder: Callable = None) -> None:
+                  project_name: str,
+                  fmt: str,
+                  max_trials: int = 10,
+                  executions_per_trial: int = 3,
+                  directory: str = "tuner_dir") -> None:
         
-        if epochs_list is None:
-            epochs_list = [5, 10, 15]
-        if batch_size_list is None:
-            batch_size_list = [16, 24, 32]
-        if lstm_units_list is None:
-            lstm_units_list = [32, 64, 96]
-        if seq_length_list is None:
-            seq_length_list = [20, 25, 30]
-        if num_layers_list is None:
-            num_layers_list = [1, 2, 3]
-        
-        self.epochs_list: List[int] = epochs_list
-        self.batch_size_list: List[int] = batch_size_list
-        self.lstm_units_list: List[int] = lstm_units_list
-        self.seq_length_list: List[int] = seq_length_list
-        self.num_layers_list: List[int] = num_layers_list
-        self.hyperparameters: List[Tuple[int, int, int, int, int]] = list(
-            product(self.epochs_list, self.batch_size_list, self.seq_length_list, self.lstm_units_list,
-                    self.num_layers_list)
-        )
-        
-        self.model_builder: Callable = model_builder if model_builder else self.__build_model
+        self.max_trials: int = max_trials
+        self.executions_per_trial: int = executions_per_trial
+        self.directory: str = directory
+        self.project_name: str = project_name
+        self.tuner: Optional[RandomSearch] = None
+        self.fmt: str = fmt
     
     @staticmethod
-    def __build_model (lstm_units: int,
-                       seq_length: int,
-                       feature_dim: int,
-                       num_layers: int) -> keras.Model:
+    def __validate_dropout_params (dropout: bool, dropout_deg: float) -> None:
+        if dropout and (not 0 < dropout_deg < 1):
+            raise TuningException(f"Invalid dropout_deg value: {dropout_deg}. It should be between 0 and 1.")
+    
+    @staticmethod
+    def __build_model (hp: HyperParameters, dropout: bool = False, dropout_deg: float = 0.0) -> keras.Model:
+        try:
+            Tuner.__validate_dropout_params(dropout, dropout_deg)
+            
+            lstm_units = hp.Int("lstm_units", min_value=32, max_value=128, step=32)
+            
+            num_layers = hp.Int("num_layers", min_value=1, max_value=3)
+            
+            seq_length = hp.Int("seq_length", min_value=20, max_value=40, step=5)
+            
+            learning_rate = hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")
+            
+            model = keras.Sequential()
+            model.add(keras.layers.LSTM(lstm_units, input_shape=(seq_length, 1), return_sequences=(num_layers > 1)))
+            for i in range(1, num_layers):
+                model.add(keras.layers.LSTM(lstm_units, return_sequences=(i < num_layers - 1)))
+                if dropout:
+                    model.add(keras.layers.Dropout(dropout_deg))
+            model.add(keras.layers.Dense(1))
+            
+            model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss="mean_squared_error")
+            return model
+        except Exception as e:
+            raise TuningException(f"Error building model: {str(e)}")
+    
+    @staticmethod
+    def __plot (model, X, Y, stock_symbol: str):
+        y_pred = model.predict(X)
+        y_pred_rescaled = scaler.inverse_transform(y_pred.reshape(-1, 1))
+        Y_rescaled = scaler.inverse_transform(Y.reshape(-1, 1))
         
-        model = keras.Sequential()
-        model.add(
-            keras.layers.LSTM(lstm_units, input_shape=(seq_length, feature_dim), return_sequences=(num_layers > 1))
-        )
-        for _ in range(1, num_layers):
-            model.add(keras.layers.LSTM(lstm_units, return_sequences=(_ < num_layers - 1)))
-        model.add(keras.layers.Dense(1))
-        
-        return model
+        plt.figure(figsize=(14, 7))
+        plt.plot(Y_rescaled, color="blue", label="Actual Price")
+        plt.plot(y_pred_rescaled, color="red", label="Predicted Price")
+        plt.title(f"Actual vs Predicted Stock Prices ({stock_symbol})")
+        plt.xlabel("Time")
+        plt.ylabel("Stock Price")
+        plt.legend()
+        plt.show()
     
     def tune (self,
               stock_symbol: str,
               interval: str,
-              threshold: float = 5,
-              metric: str = "mse",
+              epochs: int = 10,
+              batch_size: int = 32,
+              metric: str = "val_loss",
               plot: bool = False,
-              verbose: bool = False):
-        
-        best_model = None
-        best_mse = float('inf')
-        
-        for params in self.hyperparameters:
-            epochs, batch_size, seq_length, lstm_units, num_layers = params
+              verbose: bool = True) -> Optional[keras.Model]:
+        try:
+            self.tuner = RandomSearch(
+                self.__build_model,
+                objective=metric,
+                max_trials=self.max_trials,
+                executions_per_trial=self.executions_per_trial,
+                directory=f"{self.directory}_{stock_symbol}",
+                project_name=self.project_name
+            )
             
-            scaler = MinMaxScaler()
-            train_data_scaled, test_data_scaled = prepare_data(stock_symbol, scaler, interval)
-            X_train, y_train = create_sequences(train_data_scaled, seq_length=seq_length)
-            X_test, y_test = create_sequences(test_data_scaled, seq_length=seq_length)
+            train_data_scaled, test_data_scaled = prepare_data(stock_symbol, interval)
+            if train_data_scaled.size == 0 or test_data_scaled.size == 0:
+                raise TuningException("Training or testing data is empty.")
             
-            model = self.model_builder(lstm_units, X_train.shape[1], X_train.shape[2], num_layers)
-            model.compile(optimizer="adam", loss="mean_squared_error")
-            model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1, verbose=verbose)
+            X_train, y_train = create_sequences(train_data_scaled)
+            X_val, y_val = create_sequences(test_data_scaled)
             
-            y_pred = model.predict(X_test)
-            y_pred_reshaped = y_pred.reshape(-1, 1)
-            y_test_reshaped = y_test.reshape(-1, 1)
-            y_pred_rescaled = scaler.inverse_transform(y_pred_reshaped)
-            y_test_rescaled = scaler.inverse_transform(y_test_reshaped)
+            callbacks = [
+                keras.callbacks.EarlyStopping(monitor=metric,
+                                              patience=5,
+                                              restore_best_weights=True,
+                                              verbose=1),
+                keras.callbacks.ReduceLROnPlateau(monitor=metric,
+                                                  factor=0.5,
+                                                  patience=3,
+                                                  verbose=1,
+                                                  min_lr=1e-6),
+                keras.callbacks.ModelCheckpoint(filepath=f"{self.directory}/{self.project_name}_best_model{self.fmt}",
+                                                monitor=metric,
+                                                save_best_only=True,
+                                                verbose=1)
+            ]
+            self.tuner.search(X_train,
+                              y_train,
+                              epochs=epochs,
+                              validation_data=(X_val, y_val),
+                              batch_size=batch_size,
+                              callbacks=callbacks,
+                              verbose=verbose)
             
-            match metric:
-                case "mse":
-                    evaluation_metric = mean_squared_error(y_test_rescaled, y_pred_rescaled)
-                case "mae":
-                    evaluation_metric = mean_absolute_error(y_test_rescaled, y_pred_rescaled)
-                case "rmse":
-                    evaluation_metric = np.sqrt(mean_squared_error(y_test_rescaled, y_pred_rescaled))
-                case _:
-                    raise ValueError(f"Unsupported metric: {metric}")
+            best_hps = self.tuner.get_best_hyperparameters(num_trials=1)[0]
+            print(f"Best LSTM units: {best_hps.get("lstm_units")}")
+            print(f"Best number of layers: {best_hps.get("num_layers")}")
+            print(f"Best sequence length: {best_hps.get("seq_length")}")
+            print(f"Best learning rate: {best_hps.get("learning_rate")}")
             
-            if verbose:
-                print(
-                    f"Model with: epochs={epochs}, batch_size={batch_size}, seq_length={seq_length}, "
-                    f"lstm_units={lstm_units}, num_layers={num_layers}"
-                )
-                print(f"{metric.upper()}: {evaluation_metric:.4f}")
+            best_model = self.tuner.hypermodel.build(best_hps)
+            best_model.fit(X_train,
+                           y_train,
+                           epochs=epochs,
+                           validation_data=(X_val, y_val),
+                           batch_size=batch_size,
+                           callbacks=callbacks,
+                           verbose=verbose)
             
             if plot:
-                plt.figure(figsize=(14, 7))
-                plt.plot(y_test_rescaled, color="blue", label="Actual Price")
-                plt.plot(y_pred_rescaled, color="red", label="Predicted Price")
-                plt.title(f"Actual vs Predicted Stock Prices ({stock_symbol})")
-                plt.xlabel("Time")
-                plt.ylabel("Stock Price")
-                plt.legend()
-                plt.text(0.95, 0.75, f"{metric.upper()}: {evaluation_metric:.2f}",
-                         transform=plt.gca().transAxes, fontsize=12, verticalalignment="top",
-                         horizontalalignment="right", bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
-                plt.show()
+                self.__plot(best_model, X_val, y_val, stock_symbol)
             
-            if evaluation_metric < best_mse:
-                best_mse = evaluation_metric
-                best_model = model
-            
-            if best_mse < threshold:
-                print(f"Early stopping, {metric.upper()} achieved: {best_mse:.4f}")
-                break
-        
-        return best_model
+            return best_model
+        except Exception as e:
+            raise TuningException(f"Error during tuning: {str(e)}")
