@@ -1,7 +1,7 @@
 from itertools import product
 from typing import List, Tuple, Callable
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from data_fetch import create_sequences, prepare_data
+from src.data_fetch import create_sequences, prepare_data
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib import pyplot as plt
 import keras

@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import tensorflow as tf
-from Classes.ModelCreator import ModelCreator
+from src.Classes.ModelCreator import ModelCreator
 
 SEED=6
 
@@ -11,19 +11,21 @@ tf.random.set_seed(SEED)
 
 interval = "1h"
 
+
 creator=ModelCreator(
                      epochs_list=[5,10,20, 30, 35],
-                     intervals=["1m","1h"],
+                     intervals=["1m","1h","1d"],
                      batch_size_list=[8,16,24,32],
                      lstm_units_list=[64,88],
                      num_layers_list=[1,2],
                      seq_length_list=[1,2,5,6,15],
-                     stock_symbol="NVDA"
+                     stock_symbol="AAPL"
                     )
 
 models=creator.train_tune(thresholds={
-    "1m":0.01,
+    "1m":0.1,
     "1h":3,
+    "1d":80,
 },plot=True,verbose=True)
 
-creator.save_models("models/NVDA")
+creator.save_models("models/AAPL")

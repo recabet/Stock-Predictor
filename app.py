@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import keras
 from flask_cors import CORS
-from data_fetch import create_sequences
+from src.data_fetch import create_sequences
 
 
 app = Flask(__name__, template_folder="/home/recabet/Coding/Stock-Predictor/template")

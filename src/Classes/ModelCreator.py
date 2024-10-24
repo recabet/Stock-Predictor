@@ -1,5 +1,5 @@
 import os
-from Classes.Tuner import Tuner
+from src.Classes.Tuner import Tuner
 from typing import List,Dict
 
 
