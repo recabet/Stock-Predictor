@@ -1,53 +1,58 @@
 import os
+import keras
 from src.Classes.Tuner import Tuner
-from typing import List,Dict
+from typing import List, Dict
 
 
 class ModelCreator(Tuner):
     def __init__ (self,
                   stock_symbol: str,
+                  fmt: str,
                   intervals: List[str],
-                  epochs_list=None,
-                  batch_size_list=None,
-                  lstm_units_list=None,
-                  seq_length_list=None,
-                  num_layers_list=None):
+                  max_trials: int = 10,
+                  executions_per_trial: int = 3,
+                  directory: str = "tuner_dir",
+                  ) -> None:
         
-        super().__init__(epochs_list,
-                         batch_size_list,
-                         lstm_units_list,
-                         seq_length_list,
-                         num_layers_list)
+        super().__init__(fmt,
+                         max_trials,
+                         executions_per_trial,
+                         directory)
         
-        self.stock_symbol: str = stock_symbol
-        self.intervals: List[str] = intervals
+        self.stock_symbol = stock_symbol
+        self.intervals = intervals
         self.models = None
     
     def train_tune (self,
-                    thresholds: Dict[str,float],
-                    metric: str = "mse",
+                    epochs: int = 10,
+                    batch_size: int = 32,
+                    metric: str = "val_loss",
                     plot: bool = False,
-                    verbose: bool = False):
+                    verbose: bool = True) -> Dict[str, keras.Model]:
         
-        models = {}
+        models: Dict[str, keras.Model] = {}
         for interval in self.intervals:
-            if interval not in thresholds:
-                raise ValueError(f"Threshold for interval '{interval}' is not provided.")
-            model_name = f"{interval}_{self.stock_symbol}_model"
-            models[model_name] = self.tune(self.stock_symbol, interval, thresholds[interval], metric, plot, verbose)
+            model_name:str = f"{interval}_{self.stock_symbol}_model"
+            print(f"Tuning for interval: {interval}")
+            
+            models[model_name] = self.tune(self.stock_symbol,
+                                           interval,
+                                           epochs,
+                                           batch_size,
+                                           metric,
+                                           plot,
+                                           verbose)
         
         self.models = models
         return models
     
-    def save_models (self, directory: str):
+    def save_models (self, directory: str) -> None:
         if not self.models:
             raise ValueError("No models to save. Please run `train_tune()` first.")
         
         if not os.path.exists(directory):
             os.makedirs(directory)
         
-        for key, model in self.models.items():
-            if model:
-                model.save(os.path.join(directory, f"{key}.h5"))
-            else:
-                print(f"Warning: Model {key} has not been trained and will not be saved.")
+        for model_name, model in self.models.items():
+            model.save(os.path.join(directory, f"{model_name}{self.fmt}"))
+            print(f"Model {model_name} saved.")
