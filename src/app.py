@@ -8,7 +8,7 @@ from flask_cors import CORS
 from src.data_fetch import create_sequences
 
 
-app = Flask(__name__, template_folder="/home/recabet/Coding/Stock-Predictor/template")
+app = Flask(__name__, template_folder="/home/recabet/Coding/Stock-Predictor/src/template")
 CORS(app)
 
 scaler = MinMaxScaler()
@@ -23,7 +23,7 @@ def predict():
         data = request.json
         stock_name = data["stock_name"]
         days = int(data["days"])
-        interval = data.get("interval", "1d")  # Default to daily if not provided
+        interval = data.get("interval", "1m")
         
         model = keras.models.load_model(f"models/{stock_name}/{interval}_{stock_name}_model.h5")
         if interval == "1h":
