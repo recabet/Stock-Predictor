@@ -16,7 +16,7 @@ class Tuner:
                   fmt: str,
                   max_trials: int = 10,
                   executions_per_trial: int = 3,
-                  directory: str = "tuner_dir") -> None:
+                  directory: str = "tuning_histories") -> None:
         
         self.max_trials: int = max_trials
         self.executions_per_trial: int = executions_per_trial
@@ -94,8 +94,8 @@ class Tuner:
             X_train, y_train = create_sequences(train_data_scaled)
             X_val, y_val = create_sequences(test_data_scaled)
             
-            keras_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{interval}_{stock_symbol}_best_model.keras"
-            h5_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{interval}_{stock_symbol}_best_model.h5"
+            keras_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{stock_symbol}/{interval}_{stock_symbol}_best_model.keras"
+            h5_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{stock_symbol}/{interval}_{stock_symbol}_best_model.h5"
             
             callbacks = [
                 keras.callbacks.EarlyStopping(monitor=metric,

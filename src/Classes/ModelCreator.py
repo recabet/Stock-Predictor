@@ -1,4 +1,3 @@
-import os
 import keras
 from src.Classes.Tuner import Tuner
 from typing import List, Dict
@@ -11,7 +10,7 @@ class ModelCreator(Tuner):
                   intervals: List[str],
                   max_trials: int = 10,
                   executions_per_trial: int = 3,
-                  directory: str = "tuner_dir",
+                  directory: str = "tuning_histories",
                   ) -> None:
         
         super().__init__(fmt,
@@ -46,13 +45,13 @@ class ModelCreator(Tuner):
         self.models = models
         return models
     
-    def save_models (self, directory: str) -> None:
-        if not self.models:
-            raise ValueError("No models to save. Please run `train_tune()` first.")
-        
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        
-        for model_name, model in self.models.items():
-            model.save(os.path.join(directory, f"{model_name}{self.fmt}"))
-            print(f"Model {model_name} saved.")
+    # def save_models (self, directory: str) -> None:
+    #     if not self.models:
+    #         raise ValueError("No models to save. Please run `train_tune()` first.")
+    #
+    #     if not os.path.exists(directory):
+    #         os.makedirs(directory)
+    #
+    #     for model_name, model in self.models.items():
+    #         model.save(os.path.join(directory, f"{model_name}{self.fmt}"))
+    #         print(f"Model {model_name} saved.")
