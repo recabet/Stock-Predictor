@@ -22,7 +22,7 @@ def predict():
     try:
         data = request.json
         stock_name = data["stock_name"]
-        days = int(data["days"])
+        days = int(data["minutes"])
         interval = data.get("interval", "1m")
         
         model = keras.models.load_model(f"/home/recabet/Coding/Stock-Predictor/models/{stock_name}/{interval}_{stock_name}_model.h5")

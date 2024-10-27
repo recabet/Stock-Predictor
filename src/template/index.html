@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Price Prediction</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/src/static/style.css">
 </head>
 <body>
 <div class="container">
@@ -13,12 +13,11 @@
         <label for="stockName">Stock Name:</label>
         <input type="text" id="stockName" name="stockName" required>
         <br>
-        <label for="days">Duration:</label>
-        <input type="number" id="days" name="days" min="1" max="7" required>
+        <label for="minutes">Duration:</label>
+        <input type="number" id="minutes" name="minutes" min="1" max="7" required>
         <br>
         <label for="interval">Prediction Interval:</label>
         <select id="interval" name="interval" required>
-            <option value="1d">Daily</option>
             <option value="1h">Hourly</option>
             <option value="1m">Minute</option>
         </select>
@@ -28,6 +27,6 @@
     <h2>Prediction:</h2>
     <div id="result"></div>
 </div>
-<script src="/script.js"></script>
+<script src="/src/static/script.js"></script>
 </body>
 </html>
