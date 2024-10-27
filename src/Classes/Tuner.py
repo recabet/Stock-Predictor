@@ -1,9 +1,10 @@
+import os
 import keras
 from keras_tuner import RandomSearch, HyperParameters
 from src.data_fetch import create_sequences, prepare_data, scaler
 from src.Classes.ConvertToH5Callback import _ConvertToH5Callback
 from matplotlib import pyplot as plt
-from typing import Optional, List, Dict
+from typing import Optional
 
 
 class TuningException(Exception):
@@ -16,11 +17,13 @@ class Tuner:
                   fmt: str,
                   max_trials: int = 10,
                   executions_per_trial: int = 3,
-                  directory: str = "tuning_histories") -> None:
+                  directory: str = "tuning_histories",
+                  models_directory: str = "models") -> None:
         
         self.max_trials: int = max_trials
         self.executions_per_trial: int = executions_per_trial
         self.directory: str = directory
+        self.models_directory: str = models_directory
         self.project_name: str = ""
         self.tuner: Optional[RandomSearch] = None
         self.fmt: str = fmt
@@ -68,16 +71,16 @@ class Tuner:
         plt.legend()
         plt.show()
     
-    def tune (self,
-              stock_symbol: str,
-              interval: str,
-              epochs: int = 10,
-              batch_size: int = 32,
-              metric: str = "val_loss",
-              plot: bool = False,
-              verbose: bool = True) -> Optional[keras.Model]:
+    def __tune (self,
+                stock_symbol: str,
+                interval: str,
+                epochs: int = 10,
+                batch_size: int = 32,
+                metric: str = "val_loss",
+                plot: bool = False,
+                verbose: bool = True) -> Optional[keras.Model]:
         try:
-            self.project_name = f"{stock_symbol}_{interval}_tuning_hist"
+            self.project_name = f"{stock_symbol}/{stock_symbol}_{interval}_tuning_hist"
             self.tuner = RandomSearch(
                 self.__build_model,
                 objective=metric,
@@ -94,8 +97,9 @@ class Tuner:
             X_train, y_train = create_sequences(train_data_scaled)
             X_val, y_val = create_sequences(test_data_scaled)
             
-            keras_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{stock_symbol}/{interval}_{stock_symbol}_best_model.keras"
-            h5_filepath = f"/home/recabet/Coding/Stock-Predictor/models/{stock_symbol}/{interval}_{stock_symbol}_best_model.h5"
+            keras_filepath = os.path.join(self.models_directory,
+                                          f"{stock_symbol}/{interval}_{stock_symbol}_best_model.keras")
+            h5_filepath = os.path.join(self.models_directory, f"{stock_symbol}/{interval}_{stock_symbol}_best_model.h5")
             
             callbacks = [
                 keras.callbacks.EarlyStopping(monitor=metric,
@@ -126,10 +130,10 @@ class Tuner:
                               verbose=verbose)
             
             best_hps = self.tuner.get_best_hyperparameters(num_trials=1)[0]
-            print(f"Best LSTM units: {best_hps.get('lstm_units')}")
-            print(f"Best number of layers: {best_hps.get('num_layers')}")
-            print(f"Best sequence length: {best_hps.get('seq_length')}")
-            print(f"Best learning rate: {best_hps.get('learning_rate')}")
+            print(f"Best LSTM units: {best_hps.get("lstm_units")}")
+            print(f"Best number of layers: {best_hps.get("num_layers")}")
+            print(f"Best sequence length: {best_hps.get("seq_length")}")
+            print(f"Best learning rate: {best_hps.get("learning_rate")}")
             
             best_model = self.tuner.hypermodel.build(best_hps)
             best_model.fit(X_train,
