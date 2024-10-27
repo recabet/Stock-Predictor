@@ -16,21 +16,21 @@ document.getElementById('predictionForm').addEventListener('submit', function (e
             interval: interval
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.predicted_price && data.predicted_price.length > 0) {
-            const result = data.predicted_price
-                .map((price, index) => `${interval[1]}${index + 1}: $${price.toFixed(2)}`)
-                .join('<br>');
-            document.getElementById('result').innerHTML = `<strong>Predicted Prices:</strong><br>${result}`;
-        } else if (data.error) {
-            document.getElementById('result').innerText = `Error: ${data.error}`;
-        } else {
-            document.getElementById('result').innerText = 'No predictions returned.';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('result').innerText = 'An error occurred while fetching the prediction.';
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.predicted_price && data.predicted_price.length > 0) {
+                const result = data.predicted_price
+                    .map((price, index) => `${interval[1]}${index + 1}: $${price.toFixed(2)}`)
+                    .join('<br>');
+                document.getElementById('result').innerHTML = `<strong>Predicted Prices:</strong><br>${result}`;
+            } else if (data.error) {
+                document.getElementById('result').innerText = `Error: ${data.error}`;
+            } else {
+                document.getElementById('result').innerText = 'No predictions returned.';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('result').innerText = 'An error occurred while fetching the prediction.';
+        });
 });
