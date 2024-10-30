@@ -6,16 +6,14 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
-from src.data_fetch import create_sequences
+from src.data_fetch import create_sequences,scaler
 
 app = FastAPI()
 
-# Mount static files for CSS and JavaScript
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Set up CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,10 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Set up template directory
-templates = Jinja2Templates(directory="templates")
-scaler = MinMaxScaler()
 
+templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def read_root (request: Request):
